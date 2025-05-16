@@ -49,12 +49,26 @@
     #gameOverScreen h2 {
       color: red;
     }
+
+    #countdown {
+      font-size: 80px;
+      color: #0f0;
+      margin: 20px;
+      display: none;
+      animation: fade 1s ease-in-out;
+    }
+
+    @keyframes fade {
+      0% {opacity: 0;}
+      50% {opacity: 1;}
+      100% {opacity: 0;}
+    }
   </style>
-  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <div id="score">النقاط: 0</div>
+  <div id="countdown">3</div>
   <button id="startBtn">ابدأ اللعب</button>
   <canvas id="gameCanvas" width="400" height="400"></canvas>
 
@@ -72,10 +86,33 @@
     const startBtn = document.getElementById("startBtn");
     const gameOverScreen = document.getElementById("gameOverScreen");
     const restartBtn = document.getElementById("restartBtn");
+    const countdownEl = document.getElementById("countdown");
 
     let snake, food, direction, gameInterval, speed, score;
 
     function startGame() {
+      startBtn.style.display = "none";
+      gameOverScreen.style.display = "none";
+      canvas.style.display = "none";
+      scoreDisplay.innerText = "النقاط: 0";
+
+      let count = 3;
+      countdownEl.innerText = count;
+      countdownEl.style.display = "block";
+
+      const countdownInterval = setInterval(() => {
+        count--;
+        if (count > 0) {
+          countdownEl.innerText = count;
+        } else {
+          clearInterval(countdownInterval);
+          countdownEl.style.display = "none";
+          beginGame();
+        }
+      }, 1000);
+    }
+
+    function beginGame() {
       snake = [{ x: 9 * box, y: 10 * box }];
       direction = "";
       food = randomFood();
@@ -83,10 +120,7 @@
       score = 0;
       updateScore();
 
-      startBtn.style.display = "none";
       canvas.style.display = "block";
-      gameOverScreen.style.display = "none";
-
       document.addEventListener("keydown", changeDirection);
       clearInterval(gameInterval);
       gameInterval = setInterval(draw, speed);
@@ -166,7 +200,7 @@
       scoreDisplay.innerText = "النقاط: " + score;
     }
 
-    // السحب على الموبايل أو الماوس
+    // التحكم باللمس والماوس
     let startX, startY;
 
     canvas.addEventListener("touchstart", e => {
