@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>تحث الاختبار</title>
+  <style>
+    body {
+      background: #111;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: sans-serif;
+      margin: 0;
+      height: 100vh;
+      user-select: none;
+      overflow: hidden;
+    }
+
+    #score {
+      font-size: 20px;
+      margin: 20px;
+    }
+
+    canvas {
+      background: #222;
+      border: 3px solid #0f0;
+      display: none;
+      touch-action: none;
+    }
+
+    #startBtn, #restartBtn {
+      padding: 10px 20px;
+      font-size: 18px;
+      background: #0f0;
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin: 10px;
+    }
+
+    #gameOverScreen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #gameOverScreen h2 {
+      color: red;
+    }
+  </style>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="score">النقاط: 0</div>
+  <button id="startBtn">ابدأ اللعب</button>
+  <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+  <div id="gameOverScreen">
+    <h2>لقد خسرت!</h2>
+    <button id="restartBtn">إعادة المحاولة</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const box = 20;
+
+    const scoreDisplay = document.getElementById("score");
+    const startBtn = document.getElementById("startBtn");
+    const gameOverScreen = document.getElementById("gameOverScreen");
+    const restartBtn = document.getElementById("restartBtn");
+
+    let snake, food, direction, gameInterval, speed, score;
+
+    function startGame() {
+      snake = [{ x: 9 * box, y: 10 * box }];
+      direction = "";
+      food = randomFood();
+      speed = 150;
+      score = 0;
+      updateScore();
+
+      startBtn.style.display = "none";
+      canvas.style.display = "block";
+      gameOverScreen.style.display = "none";
+
+      document.addEventListener("keydown", changeDirection);
+      clearInterval(gameInterval);
+      gameInterval = setInterval(draw, speed);
+    }
+
+    function randomFood() {
+      return {
+        x: Math.floor(Math.random() * 20) * box,
+        y: Math.floor(Math.random() * 20) * box
+      };
+    }
+
+    function changeDirection(e) {
+      if (e.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
+      if (e.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
+      if (e.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
+      if (e.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
+    }
+
+    function setSwipeDirection(dx, dy) {
+      if (Math.abs(dx) > Math.abs(dy)) {
+        if (dx > 0 && direction !== "LEFT") direction = "RIGHT";
+        else if (dx < 0 && direction !== "RIGHT") direction = "LEFT";
+      } else {
+        if (dy > 0 && direction !== "UP") direction = "DOWN";
+        else if (dy < 0 && direction !== "DOWN") direction = "UP";
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < snake.length; i++) {
+        ctx.fillStyle = i === 0 ? "#0f0" : "#0a0";
+        ctx.fillRect(snake[i].x, snake[i].y, box, box);
+      }
+
+      ctx.fillStyle = "#f00";
+      ctx.fillRect(food.x, food.y, box, box);
+
+      let headX = snake[0].x;
+      let headY = snake[0].y;
+
+      if (direction === "LEFT") headX -= box;
+      if (direction === "UP") headY -= box;
+      if (direction === "RIGHT") headX += box;
+      if (direction === "DOWN") headY += box;
+
+      if (
+        headX < 0 || headY < 0 || headX >= canvas.width || headY >= canvas.height ||
+        snake.some(segment => segment.x === headX && segment.y === headY)
+      ) {
+        clearInterval(gameInterval);
+        canvas.style.display = "none";
+        gameOverScreen.style.display = "flex";
+        return;
+      }
+
+      if (headX === food.x && headY === food.y) {
+        food = randomFood();
+        score++;
+        updateScore();
+
+        if (speed > 60) {
+          speed -= 5;
+          clearInterval(gameInterval);
+          gameInterval = setInterval(draw, speed);
+        }
+      } else {
+        snake.pop();
+      }
+
+      snake.unshift({ x: headX, y: headY });
+    }
+
+    function updateScore() {
+      scoreDisplay.innerText = "النقاط: " + score;
+    }
+
+    // السحب على الموبايل أو الماوس
+    let startX, startY;
+
+    canvas.addEventListener("touchstart", e => {
+      const touch = e.touches[0];
+      startX = touch.clientX;
+      startY = touch.clientY;
+    });
+
+    canvas.addEventListener("touchend", e => {
+      const touch = e.changedTouches[0];
+      const dx = touch.clientX - startX;
+      const dy = touch.clientY - startY;
+      setSwipeDirection(dx, dy);
+    });
+
+    canvas.addEventListener("mousedown", e => {
+      startX = e.clientX;
+      startY = e.clientY;
+    });
+
+    canvas.addEventListener("mouseup", e => {
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      setSwipeDirection(dx, dy);
+    });
+
+    startBtn.onclick = startGame;
+    restartBtn.onclick = startGame;
+  </script>
+</body>
+</html>
